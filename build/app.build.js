@@ -2,7 +2,7 @@
     appDir: "../",
     baseUrl: "./",
     dir: "../target",
-    modules: [{ name: "js/main" }],
+    modules: [{ name: "src/ganttMaster" }],
     paths: {
         "jquery": "libs/jquery",
         "jqueryui": "libs/jquery-ui",
@@ -26,6 +26,26 @@
         },
         dustjs: {
             exports: "dust"
+        },
+        "gantt.master": {
+            exports: "GanttMaster",
+            deps: ["jquerytimers", "gantt.utilities", "gantt.drawer", "gantt.grid.editor", "gantt.task"]
+        },
+        "gantt.drawer": {
+            exports: "GanttDrawer",
+            deps: ["jquerytimers", "gantt.utilities"]
+        },
+        "gantt.grid.editor": {
+            exports: "GanttGridEditor",
+            deps: ["jquery", "gantt.utilities", "gantt.task"]
+        },
+        "gantt.task": {
+            exports: "GanttModel",
+            deps: ["gantt.utilities"]
+        },
+        "gantt.utilities": {
+            exports: "GanttUtilities",
+            deps: ["jquery", "dustjs"]
         }
     }
 })

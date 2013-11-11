@@ -5,11 +5,11 @@ require.config({
         "jquery": "libs/jquery",
         "jqueryui": "libs/jquery-ui",
         "jquerytimers": "libs/jquery.timers",
+        "gantt.utilities": "src/ganttUtilities",
         "gantt.master": "src/ganttMaster",
         "gantt.drawer": "src/ganttDrawer",
         "gantt.grid.editor": "src/ganttGridEditor",
         "gantt.task": "src/ganttTask",
-        "gantt.utilities": "src/ganttUtilities",
         "dustjs": "libs/dust",
         "text": "libs/text"
     },
@@ -25,6 +25,21 @@ require.config({
         },
         dustjs: {
             exports: "dust"
+        },
+        "gantt.master": {
+            deps: ["jquerytimers", "gantt.utilities", "gantt.drawer", "gantt.grid.editor", "gantt.task"]
+        },
+        "gantt.drawer": {
+            deps: ["jquerytimers", "gantt.utilities"]
+        },
+        "gantt.grid.editor": {
+            deps: ["jquery", "gantt.utilities", "gantt.task"]
+        },
+        "gantt.task": {
+            deps: ["gantt.utilities"]
+        },
+        "gantt.utilities": {
+            deps: ["jquery", "dustjs"]
         }
     }
 });
@@ -50,8 +65,8 @@ require(["require",
         var template = Dust.compile(tpl, templateName);
         Dust.loadSource(template);
     }
-    GanttUtilities.injectCss(platformCss.replace("APP_PATH", toUrl("../")), "all", "platform-gantt-style");
-    GanttUtilities.injectCss(ganttCss.replace("APP_PATH", toUrl("../")), "all", "gantt-style");
+    GanttUtilities.injectCss(platformCss.replaceAll("APP_PATH", toUrl("./css/img")), "all", "platform-gantt-style");
+    GanttUtilities.injectCss(ganttCss.replaceAll("APP_PATH", toUrl("./css/img")), "all", "gantt-style");
 
     // here starts gantt initialization
     ge = new Gantt();
