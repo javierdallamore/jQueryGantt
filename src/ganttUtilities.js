@@ -220,7 +220,7 @@
         var d = new Date(start + 3600000 * 12);
         d.setHours(0, 0, 0, 0);
         //move to next working day
-        while (isHoliday(d)) {
+        while (window.isHoliday(d)) {
             d.setDate(d.getDate() + 1);
         }
         d.setHours(0, 0, 0, 0);
@@ -231,7 +231,7 @@
         var d = new Date(end - 3600000 * 12);
         d.setHours(23, 59, 59, 999);
         //move to next working day
-        while (isHoliday(d)) {
+        while (window.isHoliday(d)) {
             d.setDate(d.getDate() + 1);
         }
         d.setHours(23, 59, 59, 999);
@@ -243,7 +243,7 @@
             q = duration - 1;
         while (q > 0) {
             d.setDate(d.getDate() + 1);
-            if (!isHoliday(d)) {
+            if (!window.isHoliday(d)) {
                 q -= 1;
             }
         }

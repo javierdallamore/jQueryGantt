@@ -92,6 +92,7 @@
         splitter.secondBox.css("overflow-y", "auto").scroll(function () {
             splitter.firstBox.scrollTop(splitter.secondBox.scrollTop());
         });
+        return this.element;
     };
 
     GanttMaster.messages = {

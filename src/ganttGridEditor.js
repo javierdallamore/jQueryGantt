@@ -52,9 +52,36 @@
 
 
     GanttGridEditor.prototype.fillEmptyLines = function () {
-        var i, master, emptyRow, factory = new GanttModel.TaskFactory(),
-            lastTask, start, level,
+        var i, master = this.master, emptyRow,
+            factory = new GanttModel.TaskFactory(), lastTask, start, level,
             rowsToAdd = 30 - this.element.find(".taskEditRow").size();
+
+        function emptyRowClick(ev) {
+            var emptyRow = $(ev.currentTarget);
+            master.beginTransaction();
+            start = new Date().getTime();
+            level = 0;
+            if (master.tasks[0]) {
+                start = master.tasks[0].start;
+                level = master.tasks[0].level + 1;
+            }
+
+            //fill all empty previouses
+            emptyRow.prevAll(".emptyRow").andSelf().each(function () {
+                var ch = factory.build("tmp_fk" + new Date().getTime(), "", "", level, start, 1),
+                    task = master.addTask(ch);
+                lastTask = ch;
+            });
+            master.endTransaction();
+            lastTask.rowElement.click();
+            lastTask.rowElement.find("[name=name]").focus()//focus to "name" input
+            .blur(function () { //if name not inserted -> undo -> remove just added lines
+                var imp = $(this);
+                if (!imp.isValueChanged()) {
+                    master.undo();
+                }
+            });
+        }
         GanttUtilities.renderTemplate("taskEmptyRow", {}, function (err, html) {
             emptyRow = $(html);
         });
@@ -62,43 +89,16 @@
         //fill with empty lines
         for (i = 0; i < rowsToAdd; i += 1) {
            //click on empty row create a task and fill above
-            master = this.master;
-            emptyRow.click(function (ev) {
-                master.beginTransaction();
-                var emptyRow = $(this);
-                start = new Date().getTime();
-                level = 0;
-                if (master.tasks[0]) {
-                    start = master.tasks[0].start;
-                    level = master.tasks[0].level + 1;
-                }
-
-                //fill all empty previouses
-                emptyRow.prevAll(".emptyRow").andSelf().each(function () {
-                    var ch = factory.build("tmp_fk" + new Date().getTime(), "", "", level, start, 1),
-                        task = master.addTask(ch);
-                    lastTask = ch;
-                });
-                master.endTransaction();
-                lastTask.rowElement.click();
-                lastTask.rowElement.find("[name=name]").focus()//focus to "name" input
-                .blur(function () { //if name not inserted -> undo -> remove just added lines
-                    var imp = $(this);
-                    if (!imp.isValueChanged()) {
-                        master.undo();
-                    }
-                });
-            });
+            emptyRow.click(emptyRowClick);
             this.element.append(emptyRow);
         }
     };
 
 
     GanttGridEditor.prototype.addTask = function (task, row) {
-        //remove extisting row
+        var taskRow, emptyRow, tr;
         this.element.find("[taskId=" + task.id + "]").remove();
 
-        var taskRow;
         GanttUtilities.renderTemplate("taskRow", {
             task: task,
             row: task.getRow() + 1,
@@ -115,7 +115,7 @@
         this.bindRowEvents(task, taskRow);
 
         if (typeof(row) !== "number") {
-            var emptyRow = this.element.find(".emptyRow:first"); //tries to fill an empty row
+            emptyRow = this.element.find(".emptyRow:first"); //tries to fill an empty row
             if (emptyRow.size() > 0) {
                 emptyRow.replaceWith(taskRow);
             }
@@ -123,7 +123,7 @@
                 this.element.append(taskRow);
             }
         } else {
-            var tr = this.element.find("tr.taskEditRow").eq(row);
+            tr = this.element.find("tr.taskEditRow").eq(row);
             if (tr.size() > 0) {
                 tr.before(taskRow);
             } else {
@@ -131,7 +131,7 @@
             }
 
         }
-        this.element.find(".taskRowIndex").each(function(i, el) {
+        this.element.find(".taskRowIndex").each(function (i, el) {
             $(el).html(i + 1);
         });
 
@@ -252,8 +252,8 @@
             $(this).updateOldValue();
 
         }).blur(function () {
-            var sups, i, linkOK, oldDeps, field, task, taskId, row,
-                el = $(this);
+            var sups, dur, newEnd, i, linkOK, oldDeps, field, task,
+                taskId, row, el = $(this);
             if (el.isValueChanged()) {
                 row = el.closest("tr");
                 taskId = row.attr("taskId");
@@ -274,19 +274,20 @@
                     if (linkOK) {
                         //synchronize status fro superiors states
                         sups = task.getSuperiors();
-                        for (i = 0; i < sups.length; i++) {
-                            if (!sups[i].from.synchronizeStatus())
+                        for (i = 0; i < sups.length; i += 1) {
+                            if (!sups[i].from.synchronizeStatus()) {
                                 break;
+                            }
                         }
 
                         self.master.changeTaskDates(task, task.start, task.end);
                     }
 
-                } else if (field == "duration") {
-                    var dur = task.duration;
-                    dur = parseInt(el.val()) || 1;
+                } else if (field === "duration") {
+                    dur = task.duration;
+                    dur = parseInt(el.val(), 10) || 1;
                     el.val(dur);
-                    var newEnd = GanttUtilities.computeEndByDuration(task.start, dur);
+                    newEnd = GanttUtilities.computeEndByDuration(task.start, dur);
                     self.master.changeTaskDates(task, task.start, newEnd);
 
                 } else {
@@ -346,7 +347,7 @@
 
         //bind row selection
         taskRow.click(function () {
-            var row = $(this);
+            var top, row = $(this);
             //var isSel = row.hasClass("rowSelected");
             row.closest("table").find(".rowSelected").removeClass("rowSelected");
             row.addClass("rowSelected");
@@ -355,11 +356,12 @@
             self.master.currentTask = self.master.getTask(row.attr("taskId"));
 
             //move highlighter
-            if (self.master.currentTask.ganttElement)
+            if (self.master.currentTask.ganttElement) {
                 self.master.gantt.highlightBar.css("top", self.master.currentTask.ganttElement.position().top);
+            }
 
             //if offscreen scroll to element
-            var top = row.position().top;
+            top = row.position().top;
             if (row.position().top > self.element.parent().height()) {
                 self.master.gantt.element.parent().scrollTop(row.position().top - self.element.parent().height() + 100);
             }
@@ -368,7 +370,7 @@
     };
 
     GanttGridEditor.prototype.openFullEditor = function (task, taskRow) {
-        var self = this,
+        var ndo, self = this,
             //task editor in popup
             taskId = taskRow.attr("taskId"),
             //make task editor
@@ -424,7 +426,7 @@
                 $(this).dateField({
                     inputField: $(this),
                     callback:  function (date) {
-                        var dur = parseInt(taskEditor.find("#duration").val());
+                        var dur = parseInt(taskEditor.find("#duration").val(), 10);
                         date.clearTime();
                         taskEditor.find("#end").val(new Date(GanttUtilities.computeEndByDuration(date.getTime(), dur)).format());
                     }
@@ -434,13 +436,13 @@
             //bind dateField on dates
             taskEditor.find("#end").click(function () {
                 $(this).dateField({
-                    inputField:$(this),
+                    inputField: $(this),
                     callback:  function (end) {
-                        var start = Date.parseString(taskEditor.find("#start").val());
+                        var dur, start = Date.parseString(taskEditor.find("#start").val());
                         end.setHours(23, 59, 59, 999);
 
                         if (end.getTime() < start.getTime()) {
-                            var dur = parseInt(taskEditor.find("#duration").val());
+                            dur = parseInt(taskEditor.find("#duration").val(), 10);
                             start = GanttUtilities.incrementDateByWorkingDays(end.getTime(), -dur);
                             taskEditor.find("#start").val(new Date(GanttUtilities.computeStart(start)).format());
                         } else {
@@ -452,9 +454,9 @@
 
             //bind blur on duration
             taskEditor.find("#duration").change(function () {
-                var start = Date.parseString(taskEditor.find("#start").val());
-                var el = $(this);
-                var dur = parseInt(el.val());
+                var start = Date.parseString(taskEditor.find("#start").val()),
+                el = $(this),
+                dur = parseInt(el.val(), 10);
                 dur = dur <= 0 ? 1 : dur;
                 el.val(dur);
                 taskEditor.find("#end").val(new Date(GanttUtilities.computeEndByDuration(start.getTime(), dur)).format());
@@ -462,14 +464,19 @@
 
             //bind add assignment
             taskEditor.find("#addAssig").click(function () {
-                var assigsTable = taskEditor.find("#assigsTable");
-                var assigRow = $.JST.createFromTemplate({task:task, assig:{id:"tmp_" + new Date().getTime()}}, "ASSIGNMENT_ROW");
+                var assigsTable = taskEditor.find("#assigsTable"),
+                assigRow = $.JST.createFromTemplate({
+                    task: task,
+                    assig: {
+                        id: "tmp_" + new Date().getTime()
+                    }
+                }, "ASSIGNMENT_ROW");
                 assigsTable.append(assigRow);
             });
 
             taskEditor.find("#status").click(function () {
-                var tskStatusChooser = $(this);
-                var changer = $.JST.createFromTemplate({}, "CHANGE_STATUS");
+                var tskStatusChooser = $(this),
+                    changer = $.JST.createFromTemplate({}, "CHANGE_STATUS");
                 changer.css("top", tskStatusChooser.position().top);
                 changer.find("[status=" + task.status + "]").addClass("selected");
                 changer.find(".taskStatus").click(function () {
@@ -493,25 +500,25 @@
                 task.description = taskEditor.find("#description").val();
                 task.code = taskEditor.find("#code").val();
                 task.progress = parseFloat(taskEditor.find("#progress").val());
-                task.duration = parseInt(taskEditor.find("#duration").val());
+                task.duration = parseInt(taskEditor.find("#duration").val(), 10);
                 task.startIsMilestone = taskEditor.find("#startIsMilestone").is(":checked");
                 task.endIsMilestone = taskEditor.find("#endIsMilestone").is(":checked");
 
                 //set assignments
                 taskEditor.find("tr[assigId]").each(function () {
-                    var trAss = $(this);
-                    var assId = trAss.attr("assigId");
-                    var resId = trAss.find("[name=resourceId]").val();
-                    var roleId = trAss.find("[name=roleId]").val();
-                    var effort = millisFromString(trAss.find("[name=effort]").val());
+                    var trAss = $(this),
+                    assId = trAss.attr("assigId"),
+                    resId = trAss.find("[name=resourceId]").val(),
+                    roleId = trAss.find("[name=roleId]").val(),
+                    effort = window.millisFromString(trAss.find("[name=effort]").val()),
+                    i, ass, found = false;
 
 
                     //check if an existing assig has been deleted and re-created with the same values
-                    var found = false;
-                    for (var i = 0; i < task.assigs.length; i++) {
-                        var ass = task.assigs[i];
+                    for (i = 0; i < task.assigs.length; i += 1) {
+                        ass = task.assigs[i];
 
-                        if (assId == ass.id) {
+                        if (assId === ass.id) {
                             ass.effort = effort;
                             ass.roleId = roleId;
                             ass.resourceId = resId;
@@ -519,7 +526,7 @@
                             found = true;
                             break;
 
-                        } else if (roleId == ass.roleId && resId == ass.resourceId) {
+                        } else if (roleId === ass.roleId && resId === ass.resourceId) {
                             ass.effort = effort;
                             ass.touched = true;
                             found = true;
@@ -529,7 +536,7 @@
                     }
 
                     if (!found) { //insert
-                        var ass = task.createAssignment("tmp_" + new Date().getTime(), resId, roleId, effort);
+                        ass = task.createAssignment("tmp_" + new Date().getTime(), resId, roleId, effort);
                         ass.touched = true;
                     }
 
@@ -555,7 +562,7 @@
             });
         }
 
-        var ndo = createBlackPage(800, 500).append(taskEditor);
+        ndo = window.createBlackPage(800, 500).append(taskEditor);
 
     };
     return GanttGridEditor;
