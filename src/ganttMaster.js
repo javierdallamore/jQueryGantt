@@ -298,7 +298,7 @@
         var tsk, ret, i;
         for (i = 0;i < this.tasks.length; i += 1) {
             tsk = this.tasks[i];
-            if (tsk.id === taskId) {
+            if (tsk && tsk.id && tsk.id.toString() === taskId.toString()) {
                 ret = tsk;
                 break;
             }
@@ -311,7 +311,7 @@
         var ret, res, i;
         for (i = 0; i < this.resources.length; i += 1) {
             res = this.resources[i];
-            if (res.id === resId) {
+            if (res && res.id && res.id.toString() === resId.toString()) {
                 ret = res;
                 break;
             }
