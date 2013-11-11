@@ -70,12 +70,7 @@ require(["require",
 
     // here starts gantt initialization
     ge = new Gantt();
-    $workSpace = $("#workSpace");
-    $workSpace.css({
-        width: $(window).width(),
-        height: $(window).height()
-    });
-    ge.init($workSpace);
+    ge.init("#workSpace", $(window).height(), $(window).width());
 
     //this is a simulation: load data from the local storage if you have already played with the demo or a textarea with starting demo data
     ret = {
