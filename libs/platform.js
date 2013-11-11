@@ -819,8 +819,8 @@ Profiler.displayAll = function() {
 
 
 $(document).ready(function() {
-  $(":input[oldValue]").livequery(function(){$(this).updateOldValue();});
-  $('.validated').livequery('blur', validateField);
+  //$(":input[oldValue]").livequery(function(){$(this).updateOldValue();});
+  //$('.validated').livequery('blur', validateField);
 });
 
 function openBlackPopup(url,width,height,onCloseCallBack,iframeId){

@@ -1,3 +1,6 @@
+.linkArrow {
+ src:url(APP_PATH/css/img/linkArrow.png);
+}
 .gdfTable {
   table-layout: fixed;
   border-collapse: separate;
@@ -216,7 +219,7 @@
   top:0px;
   position:absolute;
   width:18px;
-  background: url(milestone.png) no-repeat;
+  background: url(APP_PATH/img/milestone.png) no-repeat;
   height:18px;
   display:none;
 }
@@ -237,7 +240,7 @@
 }
 
 .taskBox .layout.extDep{
-  background-image:url(hasExternalDeps.png);
+  background-image:url(APP_PATH/img/hasExternalDeps.png);
 }
 
 
