@@ -1,20 +1,19 @@
-({
-    appDir: "../",
+/*global require window console*/
+require.config({
     baseUrl: "./",
-    dir: "../target",
-    modules: [{ name: "src/main" }],
     paths: {
         "jquery": "libs/jquery",
         "jqueryui": "libs/jquery-ui",
         "jquerytimers": "libs/jquery.timers",
+        "gantt.utilities": "src/ganttUtilities",
         "gantt.master": "src/ganttMaster",
         "gantt.drawer": "src/ganttDrawer",
         "gantt.grid.editor": "src/ganttGridEditor",
         "gantt.task": "src/ganttTask",
-        "gantt.utilities": "src/ganttUtilities",
         "dustjs": "libs/dust",
         "text": "libs/text"
     },
+
     shim: {
         jqueryui: {
             exports: "$",
@@ -28,24 +27,33 @@
             exports: "dust"
         },
         "gantt.master": {
-            exports: "GanttMaster",
             deps: ["jquerytimers", "gantt.utilities", "gantt.drawer", "gantt.grid.editor", "gantt.task"]
         },
         "gantt.drawer": {
-            exports: "GanttDrawer",
             deps: ["jquerytimers", "gantt.utilities"]
         },
         "gantt.grid.editor": {
-            exports: "GanttGridEditor",
             deps: ["jquery", "gantt.utilities", "gantt.task"]
         },
         "gantt.task": {
-            exports: "GanttModel",
             deps: ["gantt.utilities"]
         },
         "gantt.utilities": {
-            exports: "GanttUtilities",
             deps: ["jquery", "dustjs"]
         }
     }
-})
+});
+
+require(["require",
+        "jquery",
+        "dustjs",
+        "libs/platform",
+        "libs/i18nJs",
+        "libs/date",
+        "gantt.master", "gantt.utilities",
+        "tpl/load-templates"
+], function (req, $, Dust, Platform, i18nJs, date, Gantt, GanttUtilities, loadTemplates) {
+    "use strict";
+    window.Gantt = Gantt;
+    return Gantt;
+});
